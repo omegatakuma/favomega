@@ -29,15 +29,25 @@
 
 ;;正規表現
 (define (remove-tweet str)
-  (set! str (regexp-replace-all #/\[.+?\]/ str ""))
-  (set! str (regexp-replace-all #/(RT|QT)\s*@?\w+.*$/ str ""))
-  (set! str (regexp-replace-all #/(\.?\s*@\w+)+\s?/ str ""))
-  (set! str (regexp-replace-all #/.*https?:\/\/\S+.*$/ str ""))
-  (set! str (regexp-replace-all #/((@\w+)+)?.*\d+.\d+.*(ポスト|リプ数).*$/ str ""))
-  (set! str (regexp-replace-all #/.*#?(?i:NowPlaying).*/ str ""))
-  (set! str (regexp-replace-all #/(&|(\.?\s*\w+;)+)/ str ""))
-  (set! str (regexp-replace-all #/.*#.*/ str ""))
-  str)
+  (let loop ((str str))
+	(cond
+	  ((rxmatch #/\[.+?\]/)
+	   (loop (regexp-replace-all #/\[.+?\]/ str "")))
+	  ((rxmatch #/(RT|QT)\s*@?\w+.*$/)
+	   (loop (regexp-replace-all #/(RT|QT)\s*@?\w+.*$/ str "")))
+	  ((rxmatch #/(\.?\s*@\w+)+\s?/)
+	   (loop (regexp-replace-all #/(\.?\s*@\w+)+\s?/ str "")))
+	  ((rxmatch #/.*https?:\/\/\S+.*$/)
+	   (loop (regexp-replace-all #/.*https?:\/\/\S+.*$/ str "")))
+	  ((rxmatch #/((@\w+)+)?.*\d+.\d+.*(ポスト|リプ数).*$/)
+	   (loop (regexp-replace-all #/((@\w+)+)?.*\d+.\d+.*(ポスト|リプ数).*$/ str "")))
+	  ((rxmatch #/.*#?(?i:NowPlaying).*/)
+	   (loop (regexp-replace-all #/.*#?(?i:NowPlaying).*/ str "")))
+	  ((rxmatch #/(&|(\.?\s*\w+;)+)/)
+	   (loop (regexp-replace-all #/(&|(\.?\s*\w+;)+)/ str "")))
+      ((rxmatch #/.*#.*/)
+	   (regexp-replace-all #/.*#.*/ str ""))
+	  (else str))))
 
 
 ;;形態素解析
