@@ -1,13 +1,10 @@
 #!/opt/local/bin/gosh
-(use srfi-1)
+(use srfi-1 :only (remove filter-map alist-delete))
 (use srfi-13 :only (string-null?))
 (use math.mt-random)
 (use mecab)
 (use net.twitter)
-(use rfc.http)
-(use rfc.uri)
-(use sxml.ssax)
-(use sxml.sxpath)
+(use sxml.sxpath :only (sxpath))
 
 (define rand (make <mersenne-twister> :seed (sys-time)))
 (define m (mecab-new2 ""))
@@ -24,7 +21,6 @@
   (print "tweet-getting...")
   (let* ((sxml (twitter-home-timeline/sxml *cred* :count 300));:screen-name user))
 		 (tweet ((sxpath "//text/text()")sxml)))
-	(print "tweet-get ok!")
 	tweet))
 
 ;;正規表現
@@ -43,8 +39,8 @@
 	   (loop (regexp-replace-all #/((@\w+)+)?.*\d+.\d+.*(ポスト|リプ数).*$/ str "")))
 	  ((rxmatch #/.*#?(?i:NowPlaying).*/ str)
 	   (loop (regexp-replace-all #/.*#?(?i:NowPlaying).*/ str "")))
-	  ((rxmatch #/(&|(\.?\s*\w+;)+)/ str)
-	   (loop (regexp-replace-all #/(&|(\.?\s*\w+;)+)/ str "")))
+	  ((rxmatch #/(&|(\.?\s*\w+\;)+)/ str)
+	   (loop (regexp-replace-all #/(&|(\.?\s*\w+\;)+)/ str "")))
       ((rxmatch #/.*#.*/ str)
 	   (regexp-replace-all #/.*#.*/ str ""))
 	  (else str))))
@@ -65,20 +61,20 @@
 (define (table word)
   (let loop ((word word)(lst '()))
 	(if (or (null? (cdr word)) (null? (cddr word)))
-	  (reverse (cons (list* (car word) "" "") lst))
+	  (reverse lst)
 	  (loop (cdr word) (cons (list* (car word) (cadr word) (caddr word)) lst)))))
 
 ;;マルコフ連鎖
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
 	(let ((solve (filter-map (lambda(x)(assoc key x))lst)))
+	  (print "key: "key)	  
 	  (print "solve: "solve)
-	  (print "key: "key)
 	  (if (null? solve)
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
 			   (hoge (list-ref solve num)))
-		  (loop (map (lambda(x)(alist-delete (car hoge) x equal?)) lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
+		  (loop (map (lambda(x)(alist-delete (car hoge) x))lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
 ;;意味あるのかはわからん
 (define (check lst)
