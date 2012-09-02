@@ -86,5 +86,5 @@
 		 (key (map (lambda(x)(car x)) word))
 		 (ls (list-ref key (mt-random-integer rand (length key))))
 		 (tweet (apply string-append (markov (map (lambda(x)(table x)) word) ls))))
-	(print "tweet: "(check (reverse (string->list tweet))))
-	(twitter-update/sxml *cred* (check (reverse (string->list tweet))))))
+	(print "tweet: "tweet)
+	(twitter-update/sxml *cred* tweet)))
