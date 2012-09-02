@@ -68,9 +68,6 @@
 	  (reverse (cons (list* (car word) "" "") lst))
 	  (loop (cdr word) (cons (list* (car word) (cadr word) (caddr word)) lst)))))
 
-(define (remove-lst lst key)
-  (map (^(x)(remove (^(y)(equal? y key))x))lst))
-
 ;;マルコフ連鎖
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
@@ -81,13 +78,13 @@
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
 			   (hoge (list-ref solve num)))
-		  (loop (remove-lst lst hoge) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
+		  (loop (map (lambda(x)(alist-delete (car hoge) x equal?)) lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
 ;;意味あるのかはわからん
 (define (check lst)
-  (if (equal? (car lst) #\っ)
-	(list->string (reverse (cons #\た lst)))
-	(list->string (reverse lst))))
+  (cond ((or (equal? (car lst) #\っ) (equal? (car lst) #\し))
+		 (list->string (reverse (cons #\た lst))))
+		(else (list->string (reverse lst)))))
 
 (define (main args)
   (let* ((str (map (lambda(x)(remove-tweet x)) (tweet-get)))
@@ -95,5 +92,5 @@
 		 (key (map (lambda(x)(car x)) word))
 		 (ls (list-ref key (mt-random-integer rand (length key))))
 		 (tweet (apply string-append (markov (map (lambda(x)(table x)) word) ls))))
-	(print "tweet: "tweet)
-	(twitter-update/sxml *cred* tweet)))
+	(print "tweet: "(check (reverse (string->list tweet))))
+	(twitter-update/sxml *cred* (check (reverse (string->list tweet))))))
