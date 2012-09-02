@@ -68,6 +68,9 @@
 	  (reverse (cons (list* (car word) "" "") lst))
 	  (loop (cdr word) (cons (list* (car word) (cadr word) (caddr word)) lst)))))
 
+(define (remove-lst lst key)
+  (map (^(x)(remove (^(y)(equal? y key))x))lst))
+
 ;;マルコフ連鎖
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
@@ -78,7 +81,7 @@
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
 			   (hoge (list-ref solve num)))
-		  (loop (map (lambda(x)(alist-delete (car hoge) x equal?)) lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
+		  (loop (remove-lst lst hoge) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
 (define (main args)
   (let* ((str (map (lambda(x)(remove-tweet x)) (tweet-get)))
