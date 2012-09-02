@@ -80,12 +80,6 @@
 			   (hoge (list-ref solve num)))
 		  (loop (map (lambda(x)(alist-delete (car hoge) x equal?)) lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
-;;意味あるのかはわからん
-(define (check lst)
-  (if (equal? (car lst) #\っ)
-	(list->string (reverse (cons #\た lst)))
-	(list->string (reverse lst))))
-
 (define (main args)
   (let* ((str (map (lambda(x)(remove-tweet x)) (tweet-get)))
 		 (word (remove null? (map (lambda(x)(morp x))str)))
