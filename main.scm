@@ -1,10 +1,10 @@
 #!/opt/local/bin/gosh
 (use srfi-1 :only (remove filter-map alist-delete))
 (use srfi-13 :only (string-null?))
+(use sxml.sxpath :only (sxpath))
 (use math.mt-random)
 (use mecab)
 (use net.twitter)
-(use sxml.sxpath :only (sxpath))
 
 (define rand (make <mersenne-twister> :seed (sys-time)))
 (define m (mecab-new2 ""))
@@ -41,7 +41,7 @@
 	   (loop (regexp-replace-all #/.*#?(?i:NowPlaying).*/ str "")))
 	  ((rxmatch #/(&|(\.?\s*\w+\;)+)/ str)
 	   (loop (regexp-replace-all #/(&|(\.?\s*\w+\;)+)/ str "")))
-      ((rxmatch #/.*#.*/ str)
+      ((rxmatch #/.*(#|＃).*/ str)
 	   (regexp-replace-all #/.*#.*/ str ""))
 	  (else str))))
 
@@ -64,6 +64,9 @@
 	  (reverse lst)
 	  (loop (cdr word) (cons (list* (car word) (cadr word) (caddr word)) lst)))))
 
+(define (remove-lst lst key)
+  (map (^(x)(remove (^(y)(equal? y key))x))lst))
+
 ;;マルコフ連鎖
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
@@ -74,13 +77,16 @@
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
 			   (hoge (list-ref solve num)))
-		  (loop (map (lambda(x)(alist-delete (car hoge) x))lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
+		  (loop (remove-lst lst hoge) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
 ;;意味あるのかはわからん
-(define (check lst)
-  (cond ((or (equal? (car lst) #\っ) (equal? (car lst) #\し))
-		 (list->string (reverse (cons #\た lst))))
-		(else (list->string (reverse lst)))))
+(define (check str)
+  (let ((lst (reverse (string->list str))))
+	(cond ((or (equal? (car lst) #\っ) 
+			   (equal? (car lst) #\し)
+			   (equal? (car lst) #\れ))
+		   (list->string (reverse (cons #\た lst))))
+		  (else (list->string (reverse lst))))))
 
 (define (main args)
   (let* ((str (map (lambda(x)(remove-tweet x)) (tweet-get)))
@@ -88,5 +94,5 @@
 		 (key (map (lambda(x)(car x)) word))
 		 (ls (list-ref key (mt-random-integer rand (length key))))
 		 (tweet (apply string-append (markov (map (lambda(x)(table x)) word) ls))))
-	(print "tweet: "(check (reverse (string->list tweet))))
-	(twitter-update/sxml *cred* (check (reverse (string->list tweet))))))
+	(print "tweet: "(check  tweet))
+	(twitter-update/sxml *cred* (check tweet))))
