@@ -17,11 +17,18 @@
 					 :access-token-secret "38c6qSo00Yq4ZVLr4gwfgoTjulSIHcxOLpOtNx7Yds"))
 
 ;;ツイート取得
-(define (tweet-get)
+(define (tweet-get user)
   (print "tweet-getting...")
-  (let* ((sxml (twitter-home-timeline/sxml *cred* :count 300));:screen-name user))
+  (let* ((sxml (twitter-user-timeline/sxml *cred* :screen-name user :count 200));:screen-name user))
 		 (tweet ((sxpath "//text/text()")sxml)))
+	(print "tweet-get ok!")
 	tweet))
+
+(define (twitter-lst)
+  (let* ((sxml (twitter-mentions/sxml *cred*))
+		 (lst (remove(^(x)(equal? x "favomega"))((sxpath "//screen_name/text()")sxml)))
+		 (num (mt-random-integer rand (length lst))))
+	(list-ref lst num)))
 
 ;;正規表現
 (define (remove-tweet str)
@@ -42,7 +49,13 @@
 	  ((rxmatch #/(&|(\.?\s*\w+\;)+)/ str)
 	   (loop (regexp-replace-all #/(&|(\.?\s*\w+\;)+)/ str "")))
       ((rxmatch #/.*(#|＃).*/ str)
-	   (regexp-replace-all #/.*#.*/ str ""))
+	   (loop (regexp-replace-all #/.*#.*/ str "")))
+	  ((rxmatch #/【.*】/ str)
+	   (loop (regexp-replace-all #/【.*】/ str "")))
+	  ((rxmatch #/レベルアップしたよ! 現在の経験値:\d+ 現在のレベル:\d+だよ\(\^\^\)/ str)
+	   (loop (regexp-replace-all #/レベルアップしたよ! 現在の経験値:\d+ 現在のレベル:\d+だよ\(\^\^\)/ str "")))
+	  ((rxmatch #/えへ+(\(\^\^\))+/ str)
+	   (loop (regexp-replace-all #/えへ+(\(\^\^\))+/ str "")))
 	  (else str))))
 
 
@@ -64,9 +77,6 @@
 	  (reverse lst)
 	  (loop (cdr word) (cons (list* (car word) (cadr word) (caddr word)) lst)))))
 
-(define (remove-lst lst key)
-  (map (^(x)(remove (^(y)(equal? y key))x))lst))
-
 ;;マルコフ連鎖
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
@@ -77,7 +87,7 @@
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
 			   (hoge (list-ref solve num)))
-		  (loop (remove-lst lst hoge) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
+		  (loop (map(^(x)(alist-delete (car hoge) x))lst) (cddr hoge) (cons (cadr hoge) (cons (car hoge) result))))))))
 
 ;;意味あるのかはわからん
 (define (check str)
@@ -89,10 +99,12 @@
 		  (else (list->string (reverse lst))))))
 
 (define (main args)
-  (let* ((str (map (lambda(x)(remove-tweet x)) (tweet-get)))
+  (let* ((user (twitter-lst))
+		 (str (map (lambda(x)(remove-tweet x)) (tweet-get user)))
 		 (word (remove null? (map (lambda(x)(morp x))str)))
 		 (key (map (lambda(x)(car x)) word))
 		 (ls (list-ref key (mt-random-integer rand (length key))))
 		 (tweet (apply string-append (markov (map (lambda(x)(table x)) word) ls))))
-	(print "tweet: "(check  tweet))
+	(print "user: "user)
+	(print "tweet: "(check tweet))
 	(twitter-update/sxml *cred* (check tweet))))
