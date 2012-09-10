@@ -6,27 +6,26 @@
 (use mecab)
 (use net.twitter)
 
+(define file-name "ファイル名")
+
 (define rand (make <mersenne-twister> :seed (sys-time)))
 (define m (mecab-new2 ""))
 
 ;;Twitter
 (define *cred* (make <twitter-cred>
-					 :consumer-key "Cvxu3yFKWCOzjIoFY0yfg"
-					 :consumer-secret "KL2sMfwR1iot3LtePAzhLm6JIK4eMhIyUaVC6SlHSs"
-					 :access-token "447972405-L1fuyeCYWFjytoNJCNutY2VgU0aWclOmHHZSio8U"
-					 :access-token-secret "38c6qSo00Yq4ZVLr4gwfgoTjulSIHcxOLpOtNx7Yds"))
+					 :consumer-key "consumer-key"
+					 :consumer-secret "consumer-secret"
+					 :access-token "access-token"
+					 :access-token-secret "access-token-secret"))
 
 ;;ツイート取得
 (define (tweet-get user)
-  (print "tweet-getting...")
   (let* ((sxml (twitter-user-timeline/sxml *cred* :screen-name user :count 200));:screen-name user))
-		 (tweet ((sxpath "//text/text()")sxml)))
-	(print "tweet-get ok!")
-	tweet))
+                 (tweet ((sxpath "//text/text()")sxml)))
+        tweet))
 
 (define (twitter-lst)
-  (let* ((sxml (twitter-mentions/sxml *cred*))
-		 (lst (remove(^(x)(equal? x "favomega"))((sxpath "//screen_name/text()")sxml)))
+  (let* ((lst (with-input-from-file file-name (pa$ read)))
 		 (num (mt-random-integer rand (length lst))))
 	(list-ref lst num)))
 
@@ -81,8 +80,6 @@
 (define (markov lst ls)
   (let loop ((lst lst)(key ls)(result '()))
 	(let ((solve (filter-map (lambda(x)(assoc key x))lst)))
-	  (print "key: "key)	  
-	  (print "solve: "solve)
 	  (if (null? solve)
 		  (reverse (cons key result))
 		(let* ((num (mt-random-integer rand (length solve)))
@@ -105,6 +102,4 @@
 		 (key (map (lambda(x)(car x)) word))
 		 (ls (list-ref key (mt-random-integer rand (length key))))
 		 (tweet (apply string-append (markov (map (lambda(x)(table x)) word) ls))))
-	(print "user: "user)
-	(print "tweet: "(check tweet))
 	(twitter-update/sxml *cred* (check tweet))))
