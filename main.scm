@@ -6,6 +6,7 @@
 (use mecab)
 (use net.twitter)
 
+;;保存するファイル名
 (define file-name "ファイル名")
 
 (define rand (make <mersenne-twister> :seed (sys-time)))
@@ -24,6 +25,7 @@
                  (tweet ((sxpath "//text/text()")sxml)))
         tweet))
 
+;;ファイルを読み込んでランダムに選ぶ
 (define (twitter-lst)
   (let* ((lst (with-input-from-file file-name (pa$ read)))
 		 (num (mt-random-integer rand (length lst))))
